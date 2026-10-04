@@ -1,0 +1,142 @@
+name: Sync Upstream and Deploy BestCF Worker
+
+on:
+  schedule:
+    # 每天定时自动检查上游更新 (UTC 02:00 / 北京时间 10:00)
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  sync-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Sync with Upstream
+        id: sync
+        run: |
+          git remote add upstream https://github.com/cmliu/CF-Pages-BestCF.git || true
+          git fetch upstream main
+          
+          # 检查上游是否有新提交
+          UPSTREAM_HASH=$(git rev-parse upstream/main)
+          LOCAL_HASH=$(git rev-parse HEAD)
+          echo "Upstream commit: $UPSTREAM_HASH"
+          echo "Local commit: $LOCAL_HASH"
+          
+          # 尝试合并上游最新更新（优先保留工作流与构建配置）
+          git merge -X theirs upstream/main -m "chore(sync): auto sync with upstream cmliu/CF-Pages-BestCF" || true
+          
+          # 检查是否有内容变更并推送到当前仓库
+          if [ -n "$(git status --porcelain)" ]; then
+            git push origin main || true
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Wrangler
+        run: npm install -g wrangler
+
+      - name: Build Static Worker
+        run: |
+          python3 -c "
+          import json, os
+
+          files = ['cf_domains.txt', 'index.html', 'script.js', 'style.css']
+          file_contents = {}
+          for f in files:
+              if os.path.exists(f):
+                  with open(f, 'r', encoding='utf-8') as fp:
+                      file_contents[f] = fp.read()
+
+          js_builder = 'const STATIC_FILES = {\\n'
+          for fname, content in file_contents.items():
+              mime = 'text/plain; charset=utf-8'
+              if fname.endswith('.html'): mime = 'text/html; charset=utf-8'
+              elif fname.endswith('.css'): mime = 'text/css; charset=utf-8'
+              elif fname.endswith('.js'): mime = 'application/javascript; charset=utf-8'
+              js_builder += f'  \"/{fname}\": {{\\n'
+              js_builder += f'    content: {json.dumps(content)},\\n'
+              js_builder += f'    type: \"{mime}\"\\n'
+              js_builder += '  },\\n'
+
+          js_builder += '''};
+
+          export default {
+            async fetch(request, env, ctx) {
+              const url = new URL(request.url);
+              let pathname = url.pathname;
+
+              if (pathname === '/' || pathname === '') {
+                pathname = '/index.html';
+              }
+
+              const file = STATIC_FILES[pathname];
+              const headers = {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type',
+                'Access-Control-Expose-Headers': 'Content-Length, Content-Type',
+                'Access-Control-Max-Age': '86400',
+                'Content-Security-Policy': 'frame-ancestors *',
+                'Cross-Origin-Resource-Policy': 'cross-origin'
+              };
+
+              if (request.method === 'OPTIONS') {
+                return new Response(null, { headers });
+              }
+
+              if (file) {
+                headers['Content-Type'] = file.type;
+                headers['Cache-Control'] = 'public, max-age=3600';
+                return new Response(file.content, { headers });
+              }
+
+              return new Response('Not Found', { status: 404, headers });
+            }
+          };
+          '''
+
+          with open('worker.js', 'w', encoding='utf-8') as fp:
+              fp.write(js_builder)
+
+          print(f'Successfully built worker.js, size: {len(js_builder)} bytes')
+          "
+
+      - name: Create wrangler.toml
+        run: |
+          cat << 'EOF' > wrangler.toml
+          name = "bestcf-worker"
+          main = "worker.js"
+          compatibility_date = "2026-01-20"
+
+          [[routes]]
+          pattern = "BestCF.205.dpdns.org"
+          custom_domain = true
+          zone_name = "205.dpdns.org"
+          EOF
+
+      - name: Deploy to Cloudflare Worker
+        env:
+          CLOUDFLARE_API_KEY: ${{ secrets.CLOUDFLARE_GLOBAL_KEY }}
+          CLOUDFLARE_EMAIL: ${{ secrets.CLOUDFLARE_EMAIL }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          npx wrangler deploy --minify
