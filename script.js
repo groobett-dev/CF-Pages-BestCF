@@ -219,6 +219,7 @@ const els = {
 	clearSelectBtn: $("#clearSelectBtn"),
 	copyResultsBtn: $("#copyResultsBtn"),
 	exportTxtBtn: $("#exportTxtBtn"),
+	saveCloudTxtBtn: $("#saveCloudTxtBtn"),
 	exportCsvBtn: $("#exportCsvBtn"),
 	selectionStatus: $("#selectionStatus"),
 	networkWarningOverlay: $("#networkWarningOverlay"),
@@ -354,6 +355,7 @@ function bindEvents() {
 	els.clearSelectBtn.addEventListener("click", resetResultSelection);
 	els.copyResultsBtn.addEventListener("click", copySelectedResultsToClipboard);
 	els.exportTxtBtn.addEventListener("click", exportSelectedResultsTxt);
+	els.saveCloudTxtBtn?.addEventListener("click", saveSelectedResultsToCloudTxt);
 	els.exportCsvBtn.addEventListener("click", exportOptimizeResultsCsv);
 	els.networkWarningLocalBtn.addEventListener("click", openLocalOptimizeFromWarning);
 	document.querySelectorAll("[data-sort]").forEach((button) => {
@@ -1021,6 +1023,9 @@ async function startLatencyRun() {
 	els.latencyBtn.innerHTML = `${svgPulseIcon()}优选延迟`;
 	updateActionAvailability();
 	renderResults();
+	if (state.results.length > 0) {
+		selectAllResults();
+	}
 }
 
 function stopLatencyRun() {
@@ -1224,6 +1229,7 @@ function updateSelectionState() {
 	els.selectionStatus.textContent = `已选 ${selected} 个`;
 	els.copyResultsBtn.disabled = selected === 0;
 	els.exportTxtBtn.disabled = selected === 0;
+	if (els.saveCloudTxtBtn) els.saveCloudTxtBtn.disabled = selected === 0;
 	els.exportCsvBtn.disabled = selected === 0;
 	els.invertSelectBtn.disabled = total === 0;
 	els.clearSelectBtn.disabled = selected === 0 && !hasActiveResultFilters();
@@ -2190,4 +2196,35 @@ function friendlyError(error) {
 	if (!error) return "操作失败";
 	if (error.name === "AbortError") return "请求超时或已停止";
 	return error.message || "操作失败";
+}
+
+
+async function saveSelectedResultsToCloudTxt() {
+	const lines = selectedResultLines();
+	if (!lines || !lines.length) {
+		els.selectionStatus.textContent = "请先勾选结果";
+		return false;
+	}
+	const btn = els.saveCloudTxtBtn;
+	const originalHtml = btn.innerHTML;
+	btn.disabled = true;
+	btn.textContent = "正在写入...";
+	try {
+		const content = lines.join("\n");
+		const res = await fetch("/api/save_ym", {
+			method: "POST",
+			headers: { "Content-Type": "text/plain; charset=utf-8" },
+			body: content
+		});
+		if (!res.ok) throw new Error(`HTTP ${res.status}`);
+		els.selectionStatus.textContent = `✅ 成功写入 ${lines.length} 条到 ym2026.txt`;
+		alert(`写入成功！已将 ${lines.length} 条全新域名结果保存至 ym2026.txt`);
+	} catch (err) {
+		console.error("写入失败:", err);
+		els.selectionStatus.textContent = `❌ 写入失败: ${err.message}`;
+		alert(`写入失败: ${err.message}`);
+	} finally {
+		btn.disabled = state.selectedIds.size === 0;
+		btn.innerHTML = originalHtml;
+	}
 }
