@@ -1,5 +1,5 @@
 const THEME_MODE_CACHE_KEY = "bestcf:theme-mode";
-let themeMode = readCachedThemeMode();
+let themeMode = "dark";
 
 function readCachedThemeMode() {
 	try {
