@@ -54,7 +54,7 @@ jobs:
 
       - name: Build Static Worker
         run: |
-          python3 -c "
+          cat << 'EOF' > build_worker.py
           import json, os
 
           files = ['cf_domains.txt', 'index.html', 'script.js', 'style.css']
@@ -70,8 +70,10 @@ jobs:
               if fname.endswith('.html'): mime = 'text/html; charset=utf-8'
               elif fname.endswith('.css'): mime = 'text/css; charset=utf-8'
               elif fname.endswith('.js'): mime = 'application/javascript; charset=utf-8'
-              js_builder += f'  "/{fname}": {{\n'
-              js_builder += f'    content: {json.dumps(content)},\n'
+              key_str = json.dumps('/' + fname)
+              val_str = json.dumps(content)
+              js_builder += f'  {key_str}: {{\n'
+              js_builder += f'    content: {val_str},\n'
               js_builder += f'    type: "{mime}"\n'
               js_builder += '  },\n'
 
@@ -154,7 +156,8 @@ jobs:
               fp.write(js_builder)
 
           print(f'Successfully built worker.js, size: {len(js_builder)} bytes')
-          "
+          EOF
+          python3 build_worker.py
 
       - name: Create wrangler.toml
         run: |
