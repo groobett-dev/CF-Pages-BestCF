@@ -32,16 +32,14 @@ jobs:
           git remote add upstream https://github.com/cmliu/CF-Pages-BestCF.git || true
           git fetch upstream main
           
-          # 检查上游是否有新提交
           UPSTREAM_HASH=$(git rev-parse upstream/main)
           LOCAL_HASH=$(git rev-parse HEAD)
           echo "Upstream commit: $UPSTREAM_HASH"
           echo "Local commit: $LOCAL_HASH"
           
-          # 尝试合并上游最新更新（优先保留工作流与构建配置）
-          git merge -X theirs upstream/main -m "chore(sync): auto sync with upstream cmliu/CF-Pages-BestCF" || true
+          # 尝试合并上游最新更新，保留本仓库自定义配置
+          git merge -X ours upstream/main -m "chore(sync): auto sync with upstream cmliu/CF-Pages-BestCF" || true
           
-          # 检查是否有内容变更并推送到当前仓库
           if [ -n "$(git status --porcelain)" ]; then
             git push origin main || true
           fi
@@ -66,16 +64,16 @@ jobs:
                   with open(f, 'r', encoding='utf-8') as fp:
                       file_contents[f] = fp.read()
 
-          js_builder = 'const STATIC_FILES = {\\n'
+          js_builder = 'const STATIC_FILES = {\n'
           for fname, content in file_contents.items():
               mime = 'text/plain; charset=utf-8'
               if fname.endswith('.html'): mime = 'text/html; charset=utf-8'
               elif fname.endswith('.css'): mime = 'text/css; charset=utf-8'
               elif fname.endswith('.js'): mime = 'application/javascript; charset=utf-8'
-              js_builder += f'  \"/{fname}\": {{\\n'
-              js_builder += f'    content: {json.dumps(content)},\\n'
-              js_builder += f'    type: \"{mime}\"\\n'
-              js_builder += '  },\\n'
+              js_builder += f'  "/{fname}": {{\n'
+              js_builder += f'    content: {json.dumps(content)},\n'
+              js_builder += f'    type: "{mime}"\n'
+              js_builder += '  },\n'
 
           js_builder += '''};
 
@@ -84,14 +82,9 @@ jobs:
               const url = new URL(request.url);
               let pathname = url.pathname;
 
-              if (pathname === '/' || pathname === '') {
-                pathname = '/index.html';
-              }
-
-              const file = STATIC_FILES[pathname];
               const headers = {
                 'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+                'Access-Control-Allow-Methods': 'GET, POST, HEAD, OPTIONS',
                 'Access-Control-Allow-Headers': 'Content-Type',
                 'Access-Control-Expose-Headers': 'Content-Length, Content-Type',
                 'Access-Control-Max-Age': '86400',
@@ -103,6 +96,49 @@ jobs:
                 return new Response(null, { headers });
               }
 
+              // 写入到 TXT API: 覆盖写入到 KV ym2026.txt (全新内容，不追加)
+              if (request.method === 'POST' && (pathname === '/api/save_ym' || pathname === '/ym2026.txt' || pathname === '/ym.txt')) {
+                try {
+                  const bodyText = await request.text();
+                  if (env.KV) {
+                    await env.KV.put('ym2026.txt', bodyText);
+                  }
+                  return new Response(JSON.stringify({
+                    success: true,
+                    count: bodyText.split('\n').filter(Boolean).length,
+                    message: 'Successfully written to ym2026.txt'
+                  }), {
+                    headers: { ...headers, 'Content-Type': 'application/json; charset=utf-8' }
+                  });
+                } catch (err) {
+                  return new Response(JSON.stringify({ success: false, error: err.message }), {
+                    status: 500,
+                    headers: { ...headers, 'Content-Type': 'application/json; charset=utf-8' }
+                  });
+                }
+              }
+
+              // 读取 /ym2026.txt 或 /ym.txt
+              if (pathname === '/ym2026.txt' || pathname === '/ym.txt') {
+                let data = '';
+                if (env.KV) {
+                  data = (await env.KV.get('ym2026.txt')) || '';
+                }
+                return new Response(data, {
+                  headers: {
+                    ...headers,
+                    'Content-Type': 'text/plain; charset=utf-8',
+                    'Cache-Control': 'no-cache, no-store, must-revalidate'
+                  }
+                });
+              }
+
+              // 首页路由
+              if (pathname === '/' || pathname === '') {
+                pathname = '/index.html';
+              }
+
+              const file = STATIC_FILES[pathname];
               if (file) {
                 headers['Content-Type'] = file.type;
                 headers['Cache-Control'] = 'public, max-age=3600';
@@ -126,6 +162,10 @@ jobs:
           name = "bestcf-worker"
           main = "worker.js"
           compatibility_date = "2026-01-20"
+
+          [[kv_namespaces]]
+          binding = "KV"
+          id = "24eae01689cd41da90c1a19b7c87a440"
 
           [[routes]]
           pattern = "BestCF.205.dpdns.org"
