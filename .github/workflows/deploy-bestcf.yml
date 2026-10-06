@@ -66,10 +66,6 @@ jobs:
           binding = "KV"
           id = "24eae01689cd41da90c1a19b7c87a440"
 
-          [[routes]]
-          pattern = "BestCF.205.dpdns.org"
-          custom_domain = true
-          zone_name = "205.dpdns.org"
 
           [[routes]]
           pattern = "b.205.dpdns.org"
