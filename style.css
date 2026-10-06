@@ -2337,3 +2337,156 @@ body {
         grid-template-columns: 1fr 1fr !important;
     }
 }
+
+
+/* ==========================================================================
+   全设备全屏幕 (手机/平板/桌面) 完美响应式与触摸屏专属适配
+   ========================================================================== */
+
+/* 1. 操作栏响应式布局 */
+.result-actions {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    padding: 14px 18px !important;
+    border-top: 1px solid var(--line) !important;
+    background: var(--panel) !important;
+}
+
+#adminAuthBadge {
+    width: 100% !important;
+    flex: 1 1 100% !important;
+    margin-bottom: 6px !important;
+    padding: 8px 14px !important;
+    background: rgba(16, 185, 129, 0.12) !important;
+    border: 1px solid rgba(16, 185, 129, 0.35) !important;
+    border-radius: 8px !important;
+    color: #10b981 !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    display: none;
+    align-items: center !important;
+    gap: 8px !important;
+    box-sizing: border-box !important;
+}
+
+.result-actions-group {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 10px !important;
+}
+
+/* 2. 按钮样式重置与触摸屏尺寸标准 (iOS/Android 44px+ HIG) */
+.btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    min-height: 44px !important;
+    padding: 10px 16px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    line-height: 1.2 !important;
+    border-radius: 8px !important;
+    white-space: nowrap !important;
+    cursor: pointer !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+    touch-action: manipulation !important;
+    box-sizing: border-box !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+}
+
+/* 覆盖早期 flex: 1 1 0 导致的极端压缩变形 */
+.result-actions-group .btn,
+.control-row-actions .btn {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: fit-content !important;
+}
+
+.btn .icon, .btn svg {
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px !important;
+    min-height: 18px !important;
+    flex-shrink: 0 !important;
+    display: inline-block !important;
+}
+
+/* 状态文本 */
+.selection-status {
+    font-size: 13px !important;
+    color: var(--muted) !important;
+    white-space: nowrap !important;
+    align-self: center !important;
+}
+
+/* 3. 移动端与平板窄屏断点增强适配 (<= 768px) */
+@media (max-width: 768px) {
+    .result-actions {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        padding: 12px 14px !important;
+        gap: 10px !important;
+    }
+
+    .result-actions-group {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+        width: 100% !important;
+    }
+
+    .result-actions-group:first-of-type {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    .result-actions-group:last-of-type {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    .result-actions-group .btn {
+        width: 100% !important;
+        flex: 1 1 auto !important;
+        min-height: 44px !important;
+        padding: 10px 8px !important;
+        font-size: 13px !important;
+        justify-content: center !important;
+    }
+
+    .selection-status {
+        grid-column: 1 / -1 !important;
+        text-align: center !important;
+        padding: 4px 0 !important;
+        font-size: 12px !important;
+    }
+
+    #adminAuthBadge {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 4px !important;
+        font-size: 12px !important;
+        padding: 8px 10px !important;
+    }
+}
+
+/* 4. 超小屏幕手机适配 (<= 400px) */
+@media (max-width: 400px) {
+    .result-actions-group {
+        grid-template-columns: 1fr !important;
+    }
+
+    .result-actions-group:first-of-type {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    .result-actions-group .btn {
+        width: 100% !important;
+    }
+}
