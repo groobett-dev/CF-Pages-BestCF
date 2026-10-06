@@ -2199,7 +2199,30 @@ function friendlyError(error) {
 }
 
 
+const ADMIN_KEY_TOKEN = "128a0301-d962-44d7-a735-6523641fccb0";
+
+function checkAndInitAdminAuth() {
+	try {
+		const urlParams = new URLSearchParams(window.location.search);
+		const adminParam = urlParams.get("admin");
+		if (adminParam === ADMIN_KEY_TOKEN) {
+			localStorage.setItem("bestcf_admin_token", adminParam);
+		}
+		const savedToken = localStorage.getItem("bestcf_admin_token");
+		if (savedToken === ADMIN_KEY_TOKEN && els.saveCloudTxtBtn) {
+			els.saveCloudTxtBtn.style.display = "inline-flex";
+		}
+	} catch (e) {
+		console.warn("Auth check error:", e);
+	}
+}
+
 async function saveSelectedResultsToCloudTxt() {
+	const adminToken = localStorage.getItem("bestcf_admin_token") || new URLSearchParams(window.location.search).get("admin");
+	if (adminToken !== ADMIN_KEY_TOKEN) {
+		alert("无写入权限：未检测到管理员授权密匙，写入已被拒绝。");
+		return false;
+	}
 	const lines = selectedResultLines();
 	if (!lines || !lines.length) {
 		els.selectionStatus.textContent = "请先勾选结果";
@@ -2211,18 +2234,24 @@ async function saveSelectedResultsToCloudTxt() {
 	btn.textContent = "正在写入...";
 	try {
 		const content = lines.join("\n");
-		const res = await fetch("/api/save_ym", {
+		const res = await fetch("/api/save_ym?token=" + encodeURIComponent(adminToken), {
 			method: "POST",
-			headers: { "Content-Type": "text/plain; charset=utf-8" },
+			headers: {
+				"Content-Type": "text/plain; charset=utf-8",
+				"X-Admin-Token": adminToken
+			},
 			body: content
 		});
-		if (!res.ok) throw new Error(`HTTP ${res.status}`);
-		els.selectionStatus.textContent = `✅ 成功写入 ${lines.length} 条到 ym2026.txt`;
-		alert(`写入成功！已将 ${lines.length} 条全新域名结果保存至 ym2026.txt`);
+		if (res.status === 403 || res.status === 401) {
+			throw new Error("权限验证失败 (403 Forbidden)");
+		}
+		if (!res.ok) throw new Error("HTTP " + res.status);
+		els.selectionStatus.textContent = "✅ 成功写入 " + lines.length + " 条到 ym2026.txt";
+		alert("写入成功！已将 " + lines.length + " 条全新域名结果保存至 ym2026.txt");
 	} catch (err) {
 		console.error("写入失败:", err);
-		els.selectionStatus.textContent = `❌ 写入失败: ${err.message}`;
-		alert(`写入失败: ${err.message}`);
+		els.selectionStatus.textContent = "❌ 写入失败: " + err.message;
+		alert("写入失败: " + err.message);
 	} finally {
 		btn.disabled = state.selectedIds.size === 0;
 		btn.innerHTML = originalHtml;
