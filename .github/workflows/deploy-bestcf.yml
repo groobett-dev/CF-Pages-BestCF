@@ -70,6 +70,12 @@ jobs:
           pattern = "BestCF.205.dpdns.org"
           custom_domain = true
           zone_name = "205.dpdns.org"
+
+          [[routes]]
+          pattern = "b.205.dpdns.org"
+          custom_domain = true
+          zone_name = "205.dpdns.org"
+
           EOF
 
       - name: Deploy to Cloudflare Worker
