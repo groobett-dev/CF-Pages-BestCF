@@ -220,6 +220,7 @@ const els = {
 	copyResultsBtn: $("#copyResultsBtn"),
 	exportTxtBtn: $("#exportTxtBtn"),
 	saveCloudTxtBtn: $("#saveCloudTxtBtn"),
+	adminAuthBadge: $("#adminAuthBadge"),
 	exportCsvBtn: $("#exportCsvBtn"),
 	selectionStatus: $("#selectionStatus"),
 	networkWarningOverlay: $("#networkWarningOverlay"),
@@ -293,6 +294,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function bindEvents() {
+	checkAndInitAdminAuth();
 	els.themeToggleBtn.addEventListener("click", toggleThemeMode);
 	els.domainImportBtn.addEventListener("click", importCfDomains);
 	els.ipInput.addEventListener("input", updateEditorMeta);
@@ -2209,8 +2211,15 @@ function checkAndInitAdminAuth() {
 			localStorage.setItem("bestcf_admin_token", adminParam);
 		}
 		const savedToken = localStorage.getItem("bestcf_admin_token");
-		if (savedToken === ADMIN_KEY_TOKEN && els.saveCloudTxtBtn) {
-			els.saveCloudTxtBtn.style.display = "inline-flex";
+		const isAdmin = (savedToken === ADMIN_KEY_TOKEN);
+		const btn = document.getElementById("saveCloudTxtBtn");
+		const badge = document.getElementById("adminAuthBadge");
+		if (isAdmin) {
+			if (btn) btn.style.display = "inline-flex";
+			if (badge) badge.style.display = "flex";
+		} else {
+			if (btn) btn.style.display = "none";
+			if (badge) badge.style.display = "none";
 		}
 	} catch (e) {
 		console.warn("Auth check error:", e);
@@ -2223,15 +2232,18 @@ async function saveSelectedResultsToCloudTxt() {
 		alert("无写入权限：未检测到管理员授权密匙，写入已被拒绝。");
 		return false;
 	}
-	const lines = selectedResultLines();
+	const lines = typeof selectedResultLines === "function" ? selectedResultLines() : [];
 	if (!lines || !lines.length) {
-		els.selectionStatus.textContent = "请先勾选结果";
+		if (els.selectionStatus) els.selectionStatus.textContent = "请先勾选结果";
+		alert("请先在表格中勾选要保存的域名节点！");
 		return false;
 	}
-	const btn = els.saveCloudTxtBtn;
-	const originalHtml = btn.innerHTML;
-	btn.disabled = true;
-	btn.textContent = "正在写入...";
+	const btn = document.getElementById("saveCloudTxtBtn") || els.saveCloudTxtBtn;
+	const originalHtml = btn ? btn.innerHTML : "写入到TXT";
+	if (btn) {
+		btn.disabled = true;
+		btn.textContent = "正在写入...";
+	}
 	try {
 		const content = lines.join("\n");
 		const res = await fetch("/api/save_ym?token=" + encodeURIComponent(adminToken), {
@@ -2246,14 +2258,16 @@ async function saveSelectedResultsToCloudTxt() {
 			throw new Error("权限验证失败 (403 Forbidden)");
 		}
 		if (!res.ok) throw new Error("HTTP " + res.status);
-		els.selectionStatus.textContent = "✅ 成功写入 " + lines.length + " 条到 ym2026.txt";
+		if (els.selectionStatus) els.selectionStatus.textContent = "✅ 成功写入 " + lines.length + " 条到 ym2026.txt";
 		alert("写入成功！已将 " + lines.length + " 条全新域名结果保存至 ym2026.txt");
 	} catch (err) {
 		console.error("写入失败:", err);
-		els.selectionStatus.textContent = "❌ 写入失败: " + err.message;
+		if (els.selectionStatus) els.selectionStatus.textContent = "❌ 写入失败: " + err.message;
 		alert("写入失败: " + err.message);
 	} finally {
-		btn.disabled = state.selectedIds.size === 0;
-		btn.innerHTML = originalHtml;
+		if (btn) {
+			btn.disabled = (state && state.selectedIds) ? state.selectedIds.size === 0 : false;
+			btn.innerHTML = originalHtml;
+		}
 	}
 }
