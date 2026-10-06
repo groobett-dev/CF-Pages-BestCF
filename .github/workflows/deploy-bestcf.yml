@@ -54,7 +54,7 @@ jobs:
 
       - name: Build Static Worker
         run: |
-          cat << 'EOF' > build_worker.py
+          python3 - << 'PYEOF'
           import json, os
 
           files = ['cf_domains.txt', 'index.html', 'script.js', 'style.css']
@@ -124,7 +124,7 @@ jobs:
                   }
                   return new Response(JSON.stringify({
                     success: true,
-                    count: bodyText.split('\n').filter(Boolean).length,
+                    count: bodyText.split(/\r?\n/).filter(Boolean).length,
                     message: 'Successfully written to ym2026.txt'
                   }), {
                     headers: { ...headers, 'Content-Type': 'application/json; charset=utf-8' }
@@ -173,8 +173,7 @@ jobs:
               fp.write(js_builder)
 
           print(f'Successfully built worker.js, size: {len(js_builder)} bytes')
-          EOF
-          python3 build_worker.py
+          PYEOF
 
       - name: Create wrangler.toml
         run: |
