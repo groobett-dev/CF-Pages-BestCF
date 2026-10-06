@@ -79,6 +79,8 @@ jobs:
 
           js_builder += '''};
 
+          const REQUIRED_ADMIN_TOKEN = "128a0301-d962-44d7-a735-6523641fccb0";
+
           export default {
             async fetch(request, env, ctx) {
               const url = new URL(request.url);
@@ -87,7 +89,7 @@ jobs:
               const headers = {
                 'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Methods': 'GET, POST, HEAD, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type',
+                'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Token',
                 'Access-Control-Expose-Headers': 'Content-Length, Content-Type',
                 'Access-Control-Max-Age': '86400',
                 'Content-Security-Policy': 'frame-ancestors *',
@@ -99,7 +101,22 @@ jobs:
               }
 
               // 写入到 TXT API: 覆盖写入到 KV ym2026.txt (全新内容，不追加)
+              // 关键安全验证：必须携带正确的 admin token 才能写入，防止被他人恶意覆盖
               if (request.method === 'POST' && (pathname === '/api/save_ym' || pathname === '/ym2026.txt' || pathname === '/ym.txt')) {
+                const tokenParam = url.searchParams.get('token') || url.searchParams.get('admin');
+                const headerToken = request.headers.get('X-Admin-Token');
+                const clientToken = tokenParam || headerToken;
+
+                if (clientToken !== REQUIRED_ADMIN_TOKEN) {
+                  return new Response(JSON.stringify({
+                    success: false,
+                    error: 'Forbidden: Invalid or missing admin auth token'
+                  }), {
+                    status: 403,
+                    headers: { ...headers, 'Content-Type': 'application/json; charset=utf-8' }
+                  });
+                }
+
                 try {
                   const bodyText = await request.text();
                   if (env.KV) {
@@ -120,7 +137,7 @@ jobs:
                 }
               }
 
-              // 读取 /ym2026.txt 或 /ym.txt
+              // 读取 /ym2026.txt 或 /ym.txt (完全公开无阻，用于节点订阅拉取)
               if (pathname === '/ym2026.txt' || pathname === '/ym.txt') {
                 let data = '';
                 if (env.KV) {
