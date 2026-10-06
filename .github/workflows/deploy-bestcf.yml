@@ -107,7 +107,7 @@ jobs:
                   }
                   return new Response(JSON.stringify({
                     success: true,
-                    count: bodyText.split(String.fromCharCode(10)).filter(Boolean).length,
+                    count: bodyText.split('\n').filter(Boolean).length,
                     message: 'Successfully written to ym2026.txt'
                   }), {
                     headers: { ...headers, 'Content-Type': 'application/json; charset=utf-8' }
@@ -172,11 +172,6 @@ jobs:
 
           [[routes]]
           pattern = "BestCF.205.dpdns.org"
-          custom_domain = true
-          zone_name = "205.dpdns.org"
-
-          [[routes]]
-          pattern = "b.205.dpdns.org"
           custom_domain = true
           zone_name = "205.dpdns.org"
           EOF
