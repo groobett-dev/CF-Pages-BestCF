@@ -20,7 +20,9 @@ for fname, content in file_contents.items():
     js_builder += f'    type: "{mime}"\n'
     js_builder += '  },\n'
 
-js_builder += """};
+nl_js = json.dumps('\n')
+
+worker_tail = """};
 
 const REQUIRED_ADMIN_TOKEN = "128a0301-d962-44d7-a735-6523641fccb0";
 
@@ -67,7 +69,7 @@ export default {
         }
         return new Response(JSON.stringify({
           success: true,
-          count: bodyText.split('\n').filter(Boolean).length,
+          count: bodyText.split(""" + nl_js + """).filter(Boolean).length,
           message: 'Successfully written to ym2026.txt'
         }), {
           headers: { ...headers, 'Content-Type': 'application/json; charset=utf-8' }
@@ -111,6 +113,8 @@ export default {
   }
 };
 """
+
+js_builder += worker_tail
 
 with open('worker.js', 'w', encoding='utf-8') as fp:
     fp.write(js_builder)
