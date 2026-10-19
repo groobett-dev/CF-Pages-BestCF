@@ -7,14 +7,14 @@
 	<meta name="theme-color" content="#070a10">
 	<meta name="apple-mobile-web-app-capable" content="yes">
 	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-	<title>BestCF 在线优选CF官方域名</title>
+	<title>Network Monitor - 网络质量与边缘连通性诊断</title>
 	<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 	<div class="boot-loading" id="bootLoading" role="status" aria-live="polite">
 		<div class="boot-loading-card">
-			<div class="boot-loading-brand">BestCF</div>
+			<div class="boot-loading-brand">Network Monitor</div>
 			<div class="boot-loading-status" id="bootLoadingStatus">正在检测网络环境…</div>
 			<div class="boot-loading-track" aria-hidden="true">
 				<div class="boot-loading-bar" id="bootLoadingBar"></div>
@@ -35,8 +35,8 @@
 					</svg>
 				</div>
 				<div>
-					<h1>BestCF</h1>
-					<small>在线优选 · 仅支持 Cloudflare CDN 上可正常访问的网站域名，无法优选第三方「CF优选域名」</small>
+					<h1>Network Monitor</h1>
+					<small>网络质量分析 · 支持全球边缘 CDN 节点延迟与 HTTP/HTTPS 访问质量测试诊断</small>
 				</div>
 			</div>
 			<button class="icon-btn theme-toggle-btn" id="themeToggleBtn" type="button" aria-label="切换配色"></button>
@@ -86,7 +86,7 @@
 							</div>
 							<div class="field">
 								<div class="label-row">
-									<label for="portSelect">优选端口</label>
+									<label for="portSelect">测试端口</label>
 									<span class="help-tip" tabindex="0" role="img" aria-label="端口说明"
 										data-tip="选择「随机端口」时，将在 443、2053、2083、2087、2096、8443 中随机选取。">!</span>
 								</div>
@@ -113,7 +113,7 @@
 									<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
 										<path d="M5 12h4l3-7 3 14 3-7h1"></path>
 									</svg>
-									优选延迟
+									测速诊断
 								</button>
 							</div>
 						</div>
@@ -160,7 +160,7 @@
 
 				<section class="panel" aria-labelledby="resultTitle">
 					<div class="panel-head">
-						<h2 class="panel-title" id="resultTitle">优选结果</h2>
+						<h2 class="panel-title" id="resultTitle">检测结果</h2>
 						<span class="tag idle" id="resultCount">0 个可用</span>
 					</div>
 					<div class="result-wrap">
@@ -170,11 +170,11 @@
 									<th class="selection-cell"><input id="selectAllHeader" type="checkbox"
 											title="全选" aria-label="全选"></th>
 									<th style="width: 33%"><button class="sort-header" type="button"
-											data-sort="address">优选域名 <span class="sort-mark"
+											data-sort="address">目标域名 <span class="sort-mark"
 												data-sort-mark="address"></span></button></th>
 									<th class="filterable-header" style="width: 17%"><button class="sort-header"
 											type="button" data-sort="type"><span class="filter-header-label"
-												role="button" tabindex="0" data-filter-key="type">优选类型</span>
+												role="button" tabindex="0" data-filter-key="type">节点类型</span>
 										<span class="sort-mark" data-sort-mark="type"></span></button></th>
 									<th class="filterable-header" style="width: 15%"><button class="sort-header"
 											type="button" data-sort="country"><span class="filter-header-label"
@@ -263,7 +263,7 @@
 				</details>
 			</div>
 			<div class="network-warning-actions">
-				<button class="btn btn-local-warning" id="networkWarningLocalBtn" type="button">使用本地优选项目</button>
+				<button class="btn btn-local-warning" id="networkWarningLocalBtn" type="button">使用本地诊断工具</button>
 			</div>
 		</div>
 	</div>
@@ -271,8 +271,8 @@
 	<!-- 本地优选 - CF 优选工具目录弹窗 -->
 	<div class="modal-overlay" id="localOptimizeModal">
 		<div class="modal local-optimize-modal">
-			<h2 class="local-optimize-title">💻 本地优选工具</h2>
-			<p class="local-optimize-subtitle">选择一款工具，点击「前往 GitHub」即可在新窗口查看与下载</p>
+			<h2 class="local-optimize-title">💻 本地网络诊断工具</h2>
+			<p class="local-optimize-subtitle">选择网络性能与诊断工具，在新窗口查看</p>
 			<div class="local-ui-filter" id="localUiFilter">
 				<button type="button" class="local-ui-filter-btn is-active" data-ui="all" onclick="setLocalUiFilter('all')">全部</button>
 				<button type="button" class="local-ui-filter-btn" data-ui="webui" onclick="setLocalUiFilter('webui')">🌐 网页界面</button>
@@ -280,7 +280,7 @@
 				<button type="button" class="local-ui-filter-btn" data-ui="cli" onclick="setLocalUiFilter('cli')">⌨️ 命令行CLI</button>
 			</div>
 			<div id="localOptimizeToolList" class="local-optimize-tools"><!-- 动态渲染 --></div>
-			<div class="local-optimize-footer">欢迎开源优选项目投稿</div>
+			<div class="local-optimize-footer">网络质量与边缘节点延迟诊断平台</div>
 		</div>
 	</div>
 
